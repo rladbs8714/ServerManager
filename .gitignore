@@ -1,0 +1,96 @@
+## 기본 빌드 출력 무시
+bin/
+obj/
+
+## 사용자별 설정 파일 무시
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## VS Code 설정 (선택)
+.vscode/
+
+## NuGet 패키지 캐시
+*.nupkg
+*.snupkg
+packages/
+# 프로젝트 외부의 전역 패키지 저장소는 무시하지 않음
+
+## 프로젝트 잠금 파일
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## 로그, 캐시, 분석
+*.log
+*.tlog
+*.cache
+*.ide
+*.dbmdl
+
+## 테스트 결과
+TestResults/
+*.vsp
+*.vspx
+*.coverage
+*.coveragexml
+
+## 빌드 도구/분석 도구 관련
+_ReSharper*/
+*.DotSettings.user
+.idea/
+*.sln.iml
+
+## Rider IDE
+.idea/
+
+## Entity Framework 자동 생성
+Migrations/
+
+## Publish 관련 임시 파일
+publish/
+*.pubxml
+*.publishproj
+
+## 기타 임시 파일
+*.tmp
+*.bak
+*.old
+*.orig
+
+## OS 관련 파일
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+## IIS 관련
+.vs/
+*.vspscc
+*.vssscc
+
+## JetBrains Rider 관련
+.idea/
+*.sln.iml
+
+## Windows image thumbnail cache
+*.db
+
+## dotCover
+*.dcvr
+
+## Local history for JetBrains tools
+.idea/.idea.*
+
+## Secrets, 환경 변수, 사용자 설정
+appsettings.Development.json
+secrets.json
+
+## Rider 및 Visual Studio 설정
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
