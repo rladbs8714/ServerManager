@@ -22,7 +22,7 @@ namespace ServerPlatform
      *  ===========================================================================
      */
 
-    internal abstract class DiscordHelper : IniHelper
+    internal class DiscordHelper : IniHelper
     {
         // ====================================================================
         // CONSTANTS
@@ -39,14 +39,14 @@ namespace ServerPlatform
         private readonly string TOKEN;
 
         /// <summary>
-        /// 디스코드 클라이언트
-        /// </summary>
-        protected readonly DiscordSocketClient CLIENT;
-
-        /// <summary>
         /// 로그 매니저
         /// </summary>
         private readonly ILogManager LOG = LogManager.Instance;
+
+        /// <summary>
+        /// 디스코드 클라이언트
+        /// </summary>
+        private readonly DiscordSocketClient CLIENT;
 
 
         // ====================================================================
@@ -66,19 +66,19 @@ namespace ServerPlatform
         /// <summary>
         /// 디스코드 클라이언트
         /// </summary>
-        protected DiscordSocketClient DiscordClient => CLIENT;
+        public DiscordSocketClient Client => CLIENT;
 
 
         // ====================================================================
-        // ABSTRACT
+        // DELEGATE / EVNET
         // ====================================================================
 
         /// <summary>
-        /// 슬래시 명령을 핸들링 하고 명령에 맞는 프로세스를 실행한다
+        /// 슬래시 명령 핸들러 delegate
         /// </summary>
-        /// <param name="slashCommand">슬래시 명령</param>
-        /// <returns><see cref="Task"/></returns>
-        protected abstract Task SlashCommandHandler(SocketSlashCommand slashCommand);
+        /// <param name="sc">슬래시 명령</param>
+        /// <returns></returns>
+        public delegate Task SlashCommandHandlerDelegate(SocketSlashCommand sc);
 
 
         // ====================================================================
@@ -105,9 +105,6 @@ namespace ServerPlatform
             CLIENT.Connected    += Connected;
             CLIENT.Disconnected += Disconnected;
             CLIENT.Ready        += Ready;
-
-            // add slash command handler event
-            CLIENT.SlashCommandExecuted += SlashCommandHandler;
 
             CLIENT.LoginAsync(Discord.TokenType.Bot, TOKEN).Wait();
             CLIENT.StartAsync()                            .Wait();
@@ -166,7 +163,7 @@ namespace ServerPlatform
         /// <param name="name">슬래시 명령 이름</param>
         /// <param name="description">슬래시 명령 설명</param>
         /// <returns>생성에 성공했다면 true, 그렇지 않다면 false</returns>
-        protected bool TryCreateSlashCommand(out SlashCommandBuilder slashCommandBuilder, SocketGuild guild, string name, string description)
+        public bool TryCreateSlashCommand(out SlashCommandBuilder slashCommandBuilder, SocketGuild guild, string name, string description)
         {
             string doc = MethodBase.GetCurrentMethod().Name;
 
@@ -203,5 +200,11 @@ namespace ServerPlatform
 
             return true;
         }
+
+        public void AddSlashCommandExecuted(SlashCommandHandlerDelegate d)
+            => CLIENT.SlashCommandExecuted += d.Invoke;
+
+        public void RemoveSlashCommandExecuted(SlashCommandHandlerDelegate d)
+            => CLIENT.SlashCommandExecuted -= d.Invoke;
     }
 }

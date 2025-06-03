@@ -23,10 +23,9 @@ namespace Generalibrary.Tcp
 
             Task.Run(async () => { 
                 await Socket.ConnectAsync(IP_END_POINT);
+                LOG.Info(LOG_TYPE, doc, $"connected server");
                 StartWating();
             });
-
-            LOG.Info(LOG_TYPE, doc, "set tcp server complite");
         }
 
 

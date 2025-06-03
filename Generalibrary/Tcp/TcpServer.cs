@@ -28,11 +28,8 @@ namespace Generalibrary.Tcp
             Task.Run(async () => { 
                 Socket = await Socket.AcceptAsync();
                 LOG.Info(LOG_TYPE, doc, $"connected client");
-
                 StartWating();
             });
-
-            LOG.Info(LOG_TYPE, doc, "set tcp server complite");
         }
 
 

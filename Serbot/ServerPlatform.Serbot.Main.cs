@@ -25,8 +25,12 @@ namespace ServerPlatform.Serbot
     {
         public const string LOG_TYPE = "Program";
 
+        
+
         public static void Main(string[] args)
         {
+            ILogManager LOG = LogManager.Instance;
+
             string doc = MethodBase.GetCurrentMethod().Name;
 
             if (args.Length == 0)
@@ -37,9 +41,16 @@ namespace ServerPlatform.Serbot
             ArgumentCollection argumentCollection = new ArgumentCollection(args);
 
             // start serbot
-            string pipeName = argumentCollection["-p"];
-            new Serbot(pipeName).Start();
-
+            try
+            {
+                new Serbot().Start();
+            }
+            catch (Exception e)
+            {
+                LOG.Error(LOG_TYPE, doc, e.Message);
+                return;
+            }
+            
             // 프로그램이 종료되지 못하게 딜레이
             Thread.Sleep(-1);
         }

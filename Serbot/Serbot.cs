@@ -16,7 +16,7 @@ namespace ServerPlatform.Serbot
      *  - 디스코드 API를 활용하여 디스코드에서 명령을 받고, 결과를 전달한다. (디스코드 봇)
      *  
      *  < TODO >
-     *  - 
+     *  - slash command 동적 생성
      *  
      *  < History >
      *  2025.05.02 @yoon
@@ -24,25 +24,41 @@ namespace ServerPlatform.Serbot
      *  ===========================================================================
      */
 
-    internal class Serbot : DiscordHelper
+    internal class Serbot : IniHelper
     {
 
         // ====================================================================
         // CONSTANTS
         // ====================================================================
 
+        /// <summary>
+        /// ini path
+        /// </summary>
         private const string INI_PATH = "ini\\serbot.ini";
 
+        /// <summary>
+        /// log type
+        /// </summary>
         private const string LOG_TYPE = "Serbot";
 
+        /// <summary>
+        /// tcp 통신 중 slash command의 id를 식별하기 위한 maker
+        /// </summary>
         private const string PREV_ID = "<|ID|>";
 
+        /// <summary>
+        /// 디스코드 길드(서버) id
+        /// </summary>
         private readonly ulong GUILD_ID;
 
-        private readonly string PIPE_NAME;
-
+        /// <summary>
+        /// tcp server host name
+        /// </summary>
         private readonly string TCP_HOST_NAME;
 
+        /// <summary>
+        /// tcp server port
+        /// </summary>
         private readonly int TCP_PORT;
 
         /// <summary>
@@ -55,8 +71,19 @@ namespace ServerPlatform.Serbot
         // FIELDS
         // ====================================================================
 
+        /// <summary>
+        /// discord helper
+        /// </summary>
+        private DiscordHelper _discordHelper;
+
+        /// <summary>
+        /// tcp helper
+        /// </summary>
         private TcpClient _tcpClient;
 
+        /// <summary>
+        /// slash command의 병렬 처리를 위한 ConcurrentDictionary
+        /// </summary>
         private ConcurrentDictionary<ulong, SocketSlashCommand> _slashCommandDictionary = new ConcurrentDictionary<ulong, SocketSlashCommand>();
 
 
@@ -64,11 +91,9 @@ namespace ServerPlatform.Serbot
         // CONSTRUCTORS
         // ====================================================================
 
-        public Serbot(string pipeName) : base(INI_PATH)
+        public Serbot() : base(INI_PATH)
         {
             string doc = MethodBase.GetCurrentMethod().Name;
-
-            PIPE_NAME = pipeName;
 
             string idRaw = GetIniData("DISCORD:GUILD", "id");
             if (!ulong.TryParse(idRaw, out GUILD_ID))
@@ -77,20 +102,25 @@ namespace ServerPlatform.Serbot
                 return;
             }
 
-            TCP_HOST_NAME = GetIniData("TCP", "host_name");
-            TCP_PORT      = int.Parse(GetIniData("TCP", "port"));
+            string hostName = GetIniData("TCP", "host_name");
+            string portRaw  = GetIniData("TCP", "port");
 
-            _tcpClient = new TcpClient(TCP_HOST_NAME, TCP_PORT);
-            _tcpClient.Start();
-
-            Thread.Sleep(1000);
-
-            Task.Run(async () =>
+            if (string.IsNullOrEmpty(hostName))
             {
-                await _tcpClient.SendAsync("connected !!");
-            });
+                throw new IniParsingException();
+            }
 
-            _tcpClient.ReceivedEvent += ResponseMessageFromServer;
+            if (string.IsNullOrEmpty(portRaw))
+            {
+                throw new IniParsingException();
+            }
+            if (!int.TryParse(portRaw, out int port))
+            {
+                throw new Exception();
+            }
+
+            TCP_HOST_NAME = hostName;
+            TCP_PORT      = port;
         }
 
 
@@ -105,10 +135,22 @@ namespace ServerPlatform.Serbot
         {
             string doc = MethodBase.GetCurrentMethod().Name;
 
-            SocketGuild guild = CLIENT.GetGuild(828949516258508810);
+            // set discord
+            _discordHelper = new DiscordHelper(INI_PATH);
 
-            // Slash 명령어 생성
-            TryCreateSlashCommand(out var scb, guild, "테스트", "테스트 프로그램 실행 후 결과값을 표시한다.");
+            _discordHelper.AddSlashCommandExecuted(StartProcessBySlashCommand);
+
+            SocketGuild guild = _discordHelper.Client.GetGuild(GUILD_ID);
+
+            // Slash 명령어 생성 (테스트)
+            _discordHelper.TryCreateSlashCommand(out var scb, guild, "테스트", "테스트 프로그램 실행 후 결과값을 표시한다.");
+
+
+            // set tcp
+            _tcpClient = new TcpClient(TCP_HOST_NAME, TCP_PORT);
+            _tcpClient.Start();
+
+            _tcpClient.ReceivedEvent += RespondToSlashCommand;
         }
 
 
@@ -121,7 +163,7 @@ namespace ServerPlatform.Serbot
         /// </summary>
         /// <param name="slashCommand">슬래시 명령</param>
         /// <returns><see cref="Task"/></returns>
-        protected override async Task SlashCommandHandler(SocketSlashCommand slashCommand)
+        protected async Task StartProcessBySlashCommand(SocketSlashCommand slashCommand)
         {
             string doc = MethodBase.GetCurrentMethod().Name;
 
@@ -142,14 +184,22 @@ namespace ServerPlatform.Serbot
             _ = _slashCommandDictionary.TryAdd(id, slashCommand);
         }
 
-
-        private async void ResponseMessageFromServer(object o, ReceivedEventArgs e)
+        /// <summary>
+        /// 서버로 부터 받은 결과물을 디스코드로 송신한다.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void RespondToSlashCommand(object sender, ReceivedEventArgs e)
         {
             string doc = MethodBase.GetCurrentMethod().Name;
+            bool success = true;
+
+            LOG.Info(LOG_TYPE, doc, $"디스코드 송신 시작");
 
             if (e.Message.IndexOf(PREV_ID) < 0)
             {
                 LOG.Error(LOG_TYPE, doc, "서버로부터 응답받은 데이터에 명령 id가 존재하지 않습니다.");
+                success = false;
                 return;
             }
 
@@ -157,17 +207,36 @@ namespace ServerPlatform.Serbot
             if (!ulong.TryParse(idRaw, out ulong id))
             {
                 LOG.Error(LOG_TYPE, doc, $"서버로부터 응답받은 데이터의 id가 정상적이지 않습니다.\nid: {idRaw}");
+                success = false;
                 return;
             }
 
             if (!_slashCommandDictionary.ContainsKey(id))
             {
                 LOG.Error(LOG_TYPE, doc, $"서버로부터 응답받은 데이터의 id로 요청한 명령을 찾을 수 없습니다.\nid: {id}");
+                success = false;
                 return;
             }
 
             string message = e.Message.Substring(0, e.Message.IndexOf(PREV_ID));
-            await _slashCommandDictionary[id].RespondAsync(message);
+            _slashCommandDictionary.TryRemove(id, out SocketSlashCommand? sc);
+
+            if (sc == null)
+            {
+                LOG.Error(LOG_TYPE, doc, $"\"{id}\"의 SocketSlashCommand가 null입니다.");
+                success = false;
+                return;
+            }
+
+            if (!success)
+            {
+                LOG.Error(LOG_TYPE, doc, $"\"{id}\"의 명령이 정상적으로 수행되지 않았습니다.");
+                return;
+            }
+
+            await sc.RespondAsync(message);
+
+            LOG.Info(LOG_TYPE, doc, $"\"{id}\"의 명령이 정상적으로 수행되었습니다.");
         }
     }
 }

@@ -1,56 +1,46 @@
 ﻿using Generalibrary;
-using Generalibrary.Tcp;
 
-namespace ServerPlatform
+namespace ServerPlatform.Agent
 {
     /*
      *  ===========================================================================
      *  작성자     : @yoon
-     *  최초 작성일: 2025.05.01
+     *  최초 작성일: 2025.06.01
      *  
      *  < 목적 >
-     *  - ServerPlatform에서 사용되는 각 Manager급 class의 base class
+     *  - ServerPlatform이 받은 명령을 인계받아 해당하는 마이크로 서비스를 실행하고,
+     *    다시 ServerPlatform으로 결과를 반환한다.
      *  
      *  < TODO >
      *  - 
      *  
      *  < History >
-     *  2025.05.01 @yoon
+     *  2025.06.01 @yoon
      *  - 최초 작성
      *  ===========================================================================
      */
 
-    internal class ManagerBase : IniHelper
+    internal class Agent : IniHelper
     {
         // ====================================================================
         // CONSTANTS
         // ====================================================================
 
-        private const string LOG_TYPE = "ManagerBase";
+        private const string INI_PATH = "ini\\agent.ini";
 
+        private const string LOG_TYPE = "Serbot";
+
+        /// <summary>
+        /// 로그 매니저
+        /// </summary>
         private readonly ILogManager LOG = LogManager.Instance;
-
-
-        // ====================================================================
-        // FIELDS
-        // ====================================================================
-
-        /// <summary>
-        /// 파일 경로
-        /// </summary>
-        protected string FILE_PATH;
-
-        /// <summary>
-        /// 프로세스 이름
-        /// </summary>
-        protected string PROCESS_NAME;
 
 
         // ====================================================================
         // CONSTRUCTORS
         // ====================================================================
 
-        protected ManagerBase(string iniPath) : base(iniPath)
+        public Agent() : base(INI_PATH)
         {
 
         }

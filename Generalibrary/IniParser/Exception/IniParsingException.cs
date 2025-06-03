@@ -1,6 +1,6 @@
 ﻿namespace Generalibrary
 {
-    internal class IniParsingException : Exception
+    public class IniParsingException : Exception
     {
         public IniParsingException() { }
 

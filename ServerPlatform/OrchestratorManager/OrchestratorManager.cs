@@ -40,7 +40,6 @@ namespace ServerPlatform
         {
             FILE_PATH    = GetIniData(SECTION, nameof(FILE_PATH).ToLower());
             PROCESS_NAME = GetIniData(SECTION, nameof(PROCESS_NAME).ToLower());
-            PIPE_NAME    = GetIniData(SECTION, nameof(PIPE_NAME).ToLower());
         }
 
 

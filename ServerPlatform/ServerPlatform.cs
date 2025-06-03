@@ -46,10 +46,6 @@ namespace ServerPlatform
 
         private readonly int AGENT_COUNT;
 
-        private readonly string TCP_HOST_NAME;
-
-        private readonly int TCP_PORT;
-
         private readonly ILogManager LOG = LogManager.Instance;
 
 
@@ -67,8 +63,6 @@ namespace ServerPlatform
         /// </summary>
         private bool _isOrchestratorRunning = false;
 
-        private TcpServer _tcpServer;
-
 
         // ====================================================================
         // CONSTRUCTORS
@@ -84,17 +78,6 @@ namespace ServerPlatform
                 LOG.Error(LOG_TYPE, doc, $"\"agent_count\"가 정상적으로 입력되지 않았습니다. ini파일을 수정해주세요.");
                 return;
             }
-
-            TCP_HOST_NAME = GetIniData("TCP", "host_name");
-            TCP_PORT      = int.Parse(GetIniData("TCP", "port"));
-
-            _tcpServer = new TcpServer(TCP_HOST_NAME, TCP_PORT);
-            _tcpServer.Start();
-
-            _tcpServer.ReceivedEvent += async (o, e) =>
-            {
-                await _tcpServer.SendAsync(e.Message);
-            };
         }
 
 
