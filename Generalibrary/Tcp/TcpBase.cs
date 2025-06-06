@@ -71,6 +71,11 @@ namespace Generalibrary.Tcp
         private readonly string       ACK = "<|ACK|>";
 
         /// <summary>
+        /// process shotdown (default: "<|SDW|>")
+        /// </summary>
+        private readonly string       SDW = "<|SDW|>";
+
+        /// <summary>
         /// end point
         /// </summary>
         protected readonly IPEndPoint IP_END_POINT;
@@ -184,12 +189,16 @@ namespace Generalibrary.Tcp
                     {
                         LOG.Info(LOG_TYPE, doc, "ACK");
                     }
+                    else if(receivedMessage == "<|SDW|>")
+                    {
+                        // process shotdown
+                    }
                     else if (receivedMessage.IndexOf(EOM) > -1)
                     {
                         string temp = receivedMessage.Replace(EOM, "");
                         ReceivedEvent(this, new ReceivedEventArgs(temp));
 
-                        LOG.Info(LOG_TYPE, doc, $"received message.\nmessage: {temp}");
+                        LOG.Info(LOG_TYPE, doc, $"received message. message: {temp}");
                     }
                     else
                     {

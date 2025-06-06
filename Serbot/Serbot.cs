@@ -102,8 +102,8 @@ namespace ServerPlatform.Serbot
                 return;
             }
 
-            string hostName = GetIniData("TCP", "host_name");
-            string portRaw  = GetIniData("TCP", "port");
+            string hostName = GetIniData("TCP:SERBOT", "host_name");
+            string portRaw  = GetIniData("TCP:SERBOT", "port");
 
             if (string.IsNullOrEmpty(hostName))
             {

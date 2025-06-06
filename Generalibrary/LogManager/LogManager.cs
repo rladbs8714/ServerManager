@@ -104,7 +104,7 @@ namespace Generalibrary
             string doc = MethodBase.GetCurrentMethod().Name;
 
             LOCATION_NAME = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location);
-
+            
             string generalSection = "GENERAL";
             // 디버그 옵션 설정
             bool.TryParse(GetIniData(generalSection, "console"), out IS_DEBUG);
@@ -138,8 +138,8 @@ namespace Generalibrary
                     while (_logStream != null && _logDatas.TryDequeue(out var log) && !string.IsNullOrEmpty(log))
                     {
                         _logStream.WriteLine(log);
-                        Thread.Sleep(1);
                     }
+                    Thread.Sleep(1);
                 }
             });
         }
@@ -242,7 +242,15 @@ namespace Generalibrary
         /// </summary>
         private void SetFileName()
         {
-            string fileName = $"{LOCATION_NAME}_{DateTime.Now.ToString(FILE_NAME_FORMAT)}.log";
+            // 2025.06.06 @yoon
+            // ServerPlatform.Agent 같이 다중 실행이 되는 프로그램의 경우 구분이 필요함
+            // 따라서 시작옵션으로 구분할 수 있는 인덱스를 받고, 인덱스가 있다면 back name 처리
+            // 하지만 이 옵션은 어느 프로그램에서든 통용되진 않을 것 같음. 수정 필요
+            string processIndex = SystemInfo.Info.StartOption["--process-index"];
+            string processBackName = string.IsNullOrEmpty(processIndex) ? string.Empty : $"_{processIndex}";
+            // end
+
+            string fileName = $"{LOCATION_NAME}{processBackName}_{DateTime.Now.ToString(FILE_NAME_FORMAT)}.log";
             _logFileFullName = Path.Combine(FILE_PATH, fileName);
         }
 

@@ -25,20 +25,12 @@ namespace ServerPlatform.Serbot
     {
         public const string LOG_TYPE = "Program";
 
-        
-
         public static void Main(string[] args)
         {
-            ILogManager LOG = LogManager.Instance;
-
             string doc = MethodBase.GetCurrentMethod().Name;
 
-            if (args.Length == 0)
-            {
-                LogManager.Instance.Error(LOG_TYPE, doc, "시작 인수가 없습니다.");
-            }
-
-            ArgumentCollection argumentCollection = new ArgumentCollection(args);
+            SystemInfo.Info.Initializer(new StartOption(args));
+            ILogManager LOG = LogManager.Instance;
 
             // start serbot
             try

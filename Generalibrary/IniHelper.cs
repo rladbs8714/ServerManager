@@ -56,7 +56,13 @@
         /// <returns>value or <seealso cref="string.Empty"/></returns>
         public string GetIniData(string section, string key)
         {
-            string? value = _iniParser[section][key];
+            if (_iniParser == null || _iniParser[section] == null)
+            {
+                Console.WriteLine($"ini load error. (section: {section}, key: {key})");
+                return string.Empty;
+            }
+
+            string? value = _iniParser[section]?[key];
             return value == null ? string.Empty : value;
         }
 

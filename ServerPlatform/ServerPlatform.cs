@@ -1,6 +1,4 @@
 ﻿using Generalibrary;
-using Generalibrary.Tcp;
-using System.Diagnostics;
 using System.Reflection;
 
 namespace ServerPlatform
@@ -63,6 +61,11 @@ namespace ServerPlatform
         /// </summary>
         private bool _isOrchestratorRunning = false;
 
+        /// <summary>
+        /// AgentManager가 실행되고 있다면 true, 그렇지 않다면 false
+        /// </summary>
+        private bool _isAgentManagerRunning = false;
+
 
         // ====================================================================
         // CONSTRUCTORS
@@ -94,14 +97,19 @@ namespace ServerPlatform
         {
             string doc = MethodBase.GetCurrentMethod().Name;
 
-            // start ServerPlatform.Agent
-
-
             // start ServerPlatform.Serbot
             _isSerbotRunning = new SerbotManager(INI_PATH).Start();
             if (!_isSerbotRunning)
             {
                 LOG.Error(LOG_TYPE, doc, $"\"Serbot\"이 정상적으로 실행되지 않았습니다.");
+                return false;
+            }
+
+            // start AgentManager
+            _isAgentManagerRunning = new AgentManager(INI_PATH).Start();
+            if (!_isAgentManagerRunning)
+            {
+                LOG.Error(LOG_TYPE, doc, $"\"{nameof(AgentManager)}\"이(가) 정상적으로 실행되지 않았습니다.");
                 return false;
             }
 

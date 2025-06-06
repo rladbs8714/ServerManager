@@ -59,8 +59,25 @@ namespace ServerPlatform
             FILE_PATH    = GetIniData(SECTION, nameof(FILE_PATH)   .ToLower());
             PROCESS_NAME = GetIniData(SECTION, nameof(PROCESS_NAME).ToLower());
 
-            TCP_HOST_NAME = GetIniData("TCP", "host_name");
-            TCP_PORT      = int.Parse(GetIniData("TCP", "port"));
+            string hostName = GetIniData("TCP:SERBOT", "host_name");
+            string portRaw  = GetIniData("TCP:SERBOT", "port");
+
+            if (string.IsNullOrEmpty(hostName))
+            {
+                throw new IniParsingException();
+            }
+
+            if (string.IsNullOrEmpty(portRaw))
+            {
+                throw new IniParsingException();
+            }
+            if (!int.TryParse(portRaw, out int port))
+            {
+                throw new Exception();
+            }
+
+            TCP_HOST_NAME = hostName;
+            TCP_PORT = port;
         }
 
 
@@ -106,6 +123,20 @@ namespace ServerPlatform
 
             _tcpServer.ReceivedEvent += RespondToSlashCommand;
 
+            // get done job and give for job to serbot lamda
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    while (JobContainer.Container.Done.TryDequeue(out Job? job))
+                    {
+                        if (job == null)
+                            continue;
+                        await _tcpServer.SendAsync(job.ToStringForDiscordSlashCommand(PREV_ID));
+                    }
+                }
+            });
+
             return true;
         }
 
@@ -117,13 +148,11 @@ namespace ServerPlatform
         private async void RespondToSlashCommand(object sender, ReceivedEventArgs e)
         {
             string doc = MethodBase.GetCurrentMethod().Name;
-            bool success = true;
-            string returnMessage = string.Empty;
+            string message = e.Message.Substring(0, e.Message.IndexOf(PREV_ID));
 
             if (e.Message.IndexOf(PREV_ID) < 0)
             {
                 LOG.Error(LOG_TYPE, doc, "serbot으로부터 받은 메시지에 id가 포함되어 있지 않습니다.");
-                success = false;
                 return;
             }
 
@@ -131,17 +160,12 @@ namespace ServerPlatform
             if (!ulong.TryParse(idRaw, out ulong id))
             {
                 LOG.Error(LOG_TYPE, doc, $"serbot으로부터 받은 메시지의 id가 정상적이지 않습니다.\nid: {idRaw}");
-                success = false;
                 return;
             }
 
             // 일련의 처리 과정
-            // ...
-
-            // test
-            returnMessage = $"테스트{PREV_ID}{idRaw}";
-
-            await _tcpServer.SendAsync(returnMessage);
+            Job job = new Job("", message, id);
+            JobContainer.Container.Todo.Enqueue(job);
         }
     }
 }

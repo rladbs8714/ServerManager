@@ -1,4 +1,4 @@
-﻿using Generalibrary.Tcp;
+﻿using Generalibrary;
 
 namespace LibTest
 {
@@ -6,23 +6,10 @@ namespace LibTest
     {
         public static async Task Main(string[] args)
         {
-            TcpServer server = new TcpServer("127.0.0.1", 3000);
-            TcpClient client = new TcpClient("127.0.0.1", 3000);
+            args = new string[] { "-n", "123", "--version", "1.1.1", "--DEBUG-MODE", "-p", "5000" };
+            StartOption startOption = new StartOption(args);
 
-            server.Start();
-            client.Start();
-
-            await server.SendAsync("from server send to client");
-
-            await client.SendAsync("from client send to server");
-
-            //while (true)
-            //{
-
-
-            //    Thread.Sleep(10);
-            //}
-            
+            Console.WriteLine(startOption.ToString());
 
             Thread.Sleep(-1);
         }

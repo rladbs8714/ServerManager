@@ -11,6 +11,8 @@ namespace ServerPlatform
         {
             string doc = MethodBase.GetCurrentMethod().Name;
 
+            SystemInfo.Info.Initializer(new StartOption(args));
+
             // start server platform
             bool isServerPlatformRunning = new ServerPlatform().Start();
             if (!isServerPlatformRunning)
