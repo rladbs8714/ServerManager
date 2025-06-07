@@ -1,7 +1,9 @@
 ﻿using Generalibrary;
 using Generalibrary.Tcp;
+using ServerPlatform.Extension;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.Json;
 
 namespace ServerPlatform
 {
@@ -113,11 +115,7 @@ namespace ServerPlatform
                 int newPort = TCP_PORT + agentIndex;
                 TcpServer server = new TcpServer(TCP_HOST_NAME, newPort);
                 server.Start();
-                server.ReceivedEvent += async (e, s) =>
-                {
-                    await server.SendAsync($"{agentIndex}번째 에이전트 서버 연결 완료!");
-                    JobContainer.Container.Done.Enqueue(new Job("", s.Message));
-                };
+                server.ReceivedEvent += AddDoneMessage;
                 _tcpServerDictionary.Add(agentIndex, server);
 
                 // start agent process
@@ -146,14 +144,9 @@ namespace ServerPlatform
             {
                 while (true)
                 {
-                    while (JobContainer.Container.Todo.TryDequeue(out Job? job))
+                    while (MessageContainer.Container.Todo.TryDequeue(out JsonMessage? msg))
                     {
-                        ++_lastAgentIndex;
-
-                        if (_lastAgentIndex >= AGENT_COUNT)
-                            _lastAgentIndex = 0;
-
-                        await _tcpServerDictionary[_lastAgentIndex].SendAsync(job.Message);
+                        await SendJsonToAgent(msg);
                     }
 
                     Thread.Sleep(1);
@@ -161,6 +154,64 @@ namespace ServerPlatform
             });
 
             return true;
+        }
+
+        /// <summary>
+        /// 완료된 메시지 큐에 결과 메시지를 추가한다
+        /// </summary>
+        /// <param name="sender">TcpServer</param>
+        /// <param name="e">tcp에서 메시지 수신을 완료하면 발생하는 이벤트의 Args</param>
+        private void AddDoneMessage(object sender, ReceivedEventArgs e)
+        {
+            string doc = MethodBase.GetCurrentMethod().Name;
+
+            string json = e.Message;
+            if (string.IsNullOrEmpty(json))
+            {
+                LOG.Error(LOG_TYPE, doc, $"Agent로 부터 받은 결과가 공백입니다.");
+                return;
+            }
+
+            JsonMessage? msg = null;
+            if      (JsonMessageForDiscord.TryParse(json, out JsonMessageForDiscord? d)) msg = d;
+            else if (JsonMessageForNormal .TryParse(json, out JsonMessageForNormal?  n)) msg = n;
+            else if (JsonMessage          .TryParse(json, out JsonMessage?           m)) msg = m;
+
+            if (msg == null)
+            {
+                LOG.Error(LOG_TYPE, doc, $"Agent로 부터 받은 결과가 형식에 맞지 않습니다.");
+                return;
+            }
+
+            MessageContainer.Container.Done.Enqueue(msg);
+        }
+
+        /// <summary>
+        /// <paramref name="msg"/>를 Agent에게 전송한다
+        /// </summary>
+        /// <param name="msg">명령을 담은 객체</param>
+        /// <returns></returns>
+        private async Task SendJsonToAgent(JsonMessage? msg)
+        {
+            string doc = MethodBase.GetCurrentMethod().Name;
+
+            if (msg == null)
+            {
+                LOG.Error(LOG_TYPE, doc, $"실행할 명령 객체가 null입니다.");
+                return;
+            }
+
+            ++_lastAgentIndex;
+
+            if (_lastAgentIndex >= AGENT_COUNT)
+                _lastAgentIndex = 0;
+
+            string json = string.Empty;
+            if      (msg is JsonMessageForDiscord d) json = d.ToJson();
+            else if (msg is JsonMessageForNormal  n) json = n.ToJson();
+            else                                     json = msg.ToJson();
+
+            await _tcpServerDictionary[_lastAgentIndex].SendAsync(json);
         }
     }
 }

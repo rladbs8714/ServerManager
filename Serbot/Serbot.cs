@@ -1,6 +1,7 @@
 ﻿using Discord.WebSocket;
 using Generalibrary;
 using Generalibrary.Tcp;
+using ServerPlatform.Extension;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
@@ -45,6 +46,11 @@ namespace ServerPlatform.Serbot
         /// tcp 통신 중 slash command의 id를 식별하기 위한 maker
         /// </summary>
         private const string PREV_ID = "<|ID|>";
+
+        /// <summary>
+        /// 옵션 구분자
+        /// </summary>
+        private const string OPT_SP   = "<|OS|>";
 
         /// <summary>
         /// 디스코드 길드(서버) id
@@ -173,11 +179,14 @@ namespace ServerPlatform.Serbot
 
             ulong  id      = slashCommand.Data.Id;
             string command = slashCommand.Data.Name;
-            string options = string.Join(" ", commandOptions);
+            string options = string.Join(OPT_SP, commandOptions);
 
             LOG.Info(LOG_TYPE, doc, $"slash command 인수. ({command} {options})");
 
-            await _tcpClient.SendAsync($"{command} {options} {PREV_ID}{id}");
+            JsonMessageForDiscord message = new JsonMessageForDiscord(command, command, id, options, OPT_SP);
+            string json = message.ToJson();
+
+            await _tcpClient.SendAsync(json);
 
             LOG.Info(LOG_TYPE, doc, $"server로 명령 전달\n{command} {options} {PREV_ID}{id}");
 

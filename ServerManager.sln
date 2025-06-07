@@ -10,6 +10,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerPlatform.Serbot", "Serbot\ServerPlatform.Serbot.csproj", "{E4F6AA21-A5AB-4AF4-BF9C-E0C24E600233}"
 	ProjectSection(ProjectDependencies) = postProject
 		{960A1184-EEA0-450C-8227-BA8258973DD9} = {960A1184-EEA0-450C-8227-BA8258973DD9}
+		{B5CFE2C7-2C9A-446F-A340-0E1D61E7BE62} = {B5CFE2C7-2C9A-446F-A340-0E1D61E7BE62}
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerPlatform", "ServerPlatform\ServerPlatform.csproj", "{0698275B-E1E0-478D-9022-D1295FCACD60}"
@@ -21,6 +22,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerPlatform.Agent", "ServerPlatform.Agent\ServerPlatform.Agent.csproj", "{A677C6E9-C6B0-4805-BA50-CBF4A820B6DA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerPlatform.MicroService.Basic", "ServerPlatform.MicroService.Basic\ServerPlatform.MicroService.Basic.csproj", "{71962022-D618-4D3B-A743-F9EE2870D349}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerPlatform.Extension", "ServerPlatform.Extension\ServerPlatform.Extension.csproj", "{B5CFE2C7-2C9A-446F-A340-0E1D61E7BE62}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -60,6 +63,10 @@ Global
 		{71962022-D618-4D3B-A743-F9EE2870D349}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71962022-D618-4D3B-A743-F9EE2870D349}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71962022-D618-4D3B-A743-F9EE2870D349}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5CFE2C7-2C9A-446F-A340-0E1D61E7BE62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5CFE2C7-2C9A-446F-A340-0E1D61E7BE62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5CFE2C7-2C9A-446F-A340-0E1D61E7BE62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5CFE2C7-2C9A-446F-A340-0E1D61E7BE62}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using ServerPlatform.Extension;
+using System.Collections.Concurrent;
 
 namespace ServerPlatform
 {
@@ -19,15 +20,15 @@ namespace ServerPlatform
      *  ===========================================================================
      */
 
-    internal class JobContainer
+    internal class MessageContainer
     {
         #region SINGLETON
-        private static JobContainer? _instance;
-        public static JobContainer Container
+        private static MessageContainer? _instance;
+        public static MessageContainer Container
         {
             get
             {
-                _instance ??= new JobContainer();
+                _instance ??= new MessageContainer();
                 return _instance;
             }
             set
@@ -44,21 +45,21 @@ namespace ServerPlatform
         /// <summary>
         /// 할 일 Queue
         /// </summary>
-        public ConcurrentQueue<Job> Todo;
+        public ConcurrentQueue<JsonMessage> Todo;
         /// <summary>
         /// 한 일 Queue
         /// </summary>
-        public ConcurrentQueue<Job> Done;
+        public ConcurrentQueue<JsonMessage> Done;
 
 
         // ====================================================================
         // CONSTRUCTORS
         // ====================================================================
 
-        private JobContainer()
+        private MessageContainer()
         {
-            Todo = new ConcurrentQueue<Job>();
-            Done = new ConcurrentQueue<Job>();
+            Todo = new ConcurrentQueue<JsonMessage>();
+            Done = new ConcurrentQueue<JsonMessage>();
         }
     }
 }

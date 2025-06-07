@@ -1,7 +1,10 @@
 ﻿using Generalibrary;
 using Generalibrary.Tcp;
+using ServerPlatform.Extension;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.Json;
 
 namespace ServerPlatform
 {
@@ -128,11 +131,15 @@ namespace ServerPlatform
             {
                 while (true)
                 {
-                    while (JobContainer.Container.Done.TryDequeue(out Job? job))
+                    while (MessageContainer.Container.Done.TryDequeue(out JsonMessage? msg))
                     {
-                        if (job == null)
+                        if (msg == null)
                             continue;
-                        await _tcpServer.SendAsync(job.ToStringForDiscordSlashCommand(PREV_ID));
+
+                        if (msg is JsonMessageForDiscord d)
+                            await _tcpServer.SendAsync(d.ToJson());
+                        else
+                            LOG.Error(LOG_TYPE, doc, $"\"Serbot\"에 전송되는 메시지가 \"{nameof(JsonMessageForDiscord)}\" 타입이 아닙니다.");
                     }
                 }
             });
@@ -148,24 +155,39 @@ namespace ServerPlatform
         private async void RespondToSlashCommand(object sender, ReceivedEventArgs e)
         {
             string doc = MethodBase.GetCurrentMethod().Name;
-            string message = e.Message.Substring(0, e.Message.IndexOf(PREV_ID));
+            string json = e.Message;
 
-            if (e.Message.IndexOf(PREV_ID) < 0)
+            if (string.IsNullOrEmpty(json))
             {
-                LOG.Error(LOG_TYPE, doc, "serbot으로부터 받은 메시지에 id가 포함되어 있지 않습니다.");
+                LOG.Error(LOG_TYPE, doc, $"serbot으로부터 받은 명령이 공백입니다.");
                 return;
             }
 
-            string idRaw = e.Message.Substring(e.Message.IndexOf(PREV_ID) + PREV_ID.Length);
-            if (!ulong.TryParse(idRaw, out ulong id))
+            JsonMessageForDiscord? message;
+            try
             {
-                LOG.Error(LOG_TYPE, doc, $"serbot으로부터 받은 메시지의 id가 정상적이지 않습니다.\nid: {idRaw}");
+                message = JsonSerializer.Deserialize<JsonMessageForDiscord>(json);
+            }
+            catch (Exception ex)
+            {
+                LOG.Error(LOG_TYPE, doc, $"serbot으로 부터 받은 명령을 올바르게 파싱할 수 없습니다.", exception: ex);
+                return;
+            }
+
+            if (message == null)
+            {
+                LOG.Error(LOG_TYPE, doc, $"serbot으로 부터 받은 명령을 올바르게 파싱하지 못했습니다.");
+                return;
+            }
+
+            if (message.ID == 0)
+            {
+                LOG.Error(LOG_TYPE, doc, $"serbot으로부터 받은 메시지의 id가 정상적이지 않습니다. {{id: {message.ID}}}");
                 return;
             }
 
             // 일련의 처리 과정
-            Job job = new Job("", message, id);
-            JobContainer.Container.Todo.Enqueue(job);
+            MessageContainer.Container.Todo.Enqueue(message);
         }
     }
 }

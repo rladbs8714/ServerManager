@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Generalibrary\Generalibrary.csproj" />
+    <ProjectReference Include="..\ServerPlatform.Extension\ServerPlatform.Extension.csproj" />
   </ItemGroup>
 
 </Project>
