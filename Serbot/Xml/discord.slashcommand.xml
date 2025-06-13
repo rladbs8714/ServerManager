@@ -1,0 +1,32 @@
+﻿<root>
+  <Test>
+    <Name>테스트</Name>
+    <Description>입력한_값을_그대로_출력한다.</Description>
+    <Options>
+      <Option1>
+        <Name>옵션</Name>
+        <OptionType>String</OptionType>
+        <Description>테스트_옵션.</Description>
+        <IsRequired>False</IsRequired>
+      </Option1>
+    </Options>
+  </Test>
+  <RandomTeam>
+    <Name>랜덤_팀</Name>
+    <Description>팀의_숫자와_입력된_플레이어로_랜덤하게_팀을_생성한다.</Description>
+    <Options>
+      <TeamCount>
+        <Name>팀_개수</Name>
+        <OptionType>String</OptionType>
+        <Description>팀_개수를_입력한다.</Description>
+        <IsRequired>True</IsRequired>
+      </TeamCount>
+      <Players>
+        <Name>플레이어</Name>
+        <OptionType>String</OptionType>
+        <Description>참여하는_플레이어를_공백(Space)로_구분하여_입력한다.</Description>
+        <IsRequired>True</IsRequired>
+      </Players>
+    </Options>
+  </RandomTeam>
+</root>

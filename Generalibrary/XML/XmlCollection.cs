@@ -1,5 +1,6 @@
 ﻿using Generalibrary.XML;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Generalibrary.Xml
@@ -47,8 +48,6 @@ namespace Generalibrary.Xml
         /// </summary>
         private Dictionary<string, XmlElement> _elements;
 
-        
-
 
         // ====================================================================
         // PROPERTIES
@@ -58,6 +57,37 @@ namespace Generalibrary.Xml
         /// 요소 리스트
         /// </summary>
         public Dictionary<string, XmlElement> Elements => _elements;
+        /// <summary>
+        /// 요소 개수
+        /// </summary>
+        public int Count => Elements.Count;
+        /// <summary>
+        /// <seealso cref="Elements"/>에서 <paramref name="index"/>번째의 요소를 반환한다.
+        /// </summary>
+        /// <param name="index">찾을 인덱스의 번호</param>
+        /// <returns>번호에 해당하는 요소가 있다면 반환, 그렇지 않다면 null</returns>
+        public XmlElement? this[int index]
+        {
+            get
+            {
+                if (_elements == null || index >= _elements.Count || index < 0)
+                    return null;
+                return _elements.ElementAt(index).Value;
+            }
+        }
+        /// <summary>
+        /// <seealso cref="Elements"/>에서 <paramref name="key"/>로 요소를 찾아 반환한다.
+        /// </summary>
+        /// <param name="key">요소를 찾을 키</param>
+        /// <returns>요소를 찾았다면 반환, 그렇지 않다면 null</returns>
+        public XmlElement? this[string key]
+        {
+            get
+            {
+                TryGetElement(key, out var r);
+                return r;
+            }
+        }
 
 
         // ====================================================================
@@ -158,6 +188,17 @@ namespace Generalibrary.Xml
                     sb.Clear();
                 }
             }
+        }
+
+        /// <summary>
+        /// Xml 컬렉션에서 <paramref name="key"/>에 대한 항목을 찾아 반환을 시도한다.
+        /// </summary>
+        /// <param name="key">찾을 요소의 키</param>
+        /// <param name="result">찾았다면 해당 요소, 그렇지 않다면 null</param>
+        /// <returns>요소 반환에 성공했다면 true, 그렇지 않다면 false</returns>
+        public bool TryGetElement(string key, out XmlElement? result)
+        {
+            return Elements.TryGetValue(key, out result);
         }
     }
 }

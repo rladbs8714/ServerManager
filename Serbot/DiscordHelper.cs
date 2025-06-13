@@ -156,14 +156,63 @@ namespace ServerPlatform
         }
 
         /// <summary>
-        /// 디스코드 슬레시 명령 생성을 시도합니다
+        /// 디스코드 슬래시 명령 생성을 시도한다.
+        /// </summary>
+        /// <param name="result">생성된 슬래시 명령</param>
+        /// <param name="guild">슬래시 명령을 추가할 디스코드 길드</param>
+        /// <param name="slashCommandBuilder">슬래시 명령</param>
+        /// <param name="slashCommandOptionBuilder">슬래시 명령 옵션</param>
+        /// <returns>생성에 성공했다면 true, 그렇지 않다면 false</returns>
+        public bool TryCreateSlashCommand(out SlashCommandBuilder? result,
+                                              SocketGuild guild,
+                                              SlashCommandBuilder slashCommandBuilder,
+                                              SlashCommandOptionBuilder[]? slashCommandOptionBuilder = null)
+        {
+            string doc = MethodBase.GetCurrentMethod().Name;
+
+            result = null;
+
+            if (guild == null)
+            {
+                LOG.Warning(LOG_TYPE, doc, $"디스코드에서 해당하는 길드를 찾을 수 없습니다. slash command는 생성되지 않았습니다.");
+                return false;
+            }
+            if (slashCommandBuilder == null)
+            {
+                LOG.Warning(LOG_TYPE, doc, $"{nameof(slashCommandBuilder)}는 null 입니다. slash command는 생성되지 않았습니다.");
+                return false;
+            }
+            if (CLIENT == null)
+            {
+                LOG.Warning(LOG_TYPE, doc, $"디스코드 클라이언트가 null입니다. \"{slashCommandBuilder.Name}\" slash command는 생성되지 않았습니다.");
+                return false;
+            }
+
+            if (slashCommandOptionBuilder != null && slashCommandOptionBuilder.Length > 0)
+                slashCommandBuilder.AddOptions(slashCommandOptionBuilder);
+
+            guild.CreateApplicationCommandAsync(slashCommandBuilder.Build());
+
+            LOG.Info(LOG_TYPE, doc, $"슬래시 명령 생성 완료. (name: {slashCommandBuilder.Name}, description: {slashCommandBuilder.Description})");
+
+            result = slashCommandBuilder;
+
+            return true;
+        }
+
+        /// <summary>
+        /// 디스코드 슬래시 명령 생성을 시도한다.
         /// </summary>
         /// <param name="slashCommandBuilder">slash command builder</param>
         /// <param name="guild">슬래시 명령을 추가할 디스코드 길드</param>
         /// <param name="name">슬래시 명령 이름</param>
         /// <param name="description">슬래시 명령 설명</param>
         /// <returns>생성에 성공했다면 true, 그렇지 않다면 false</returns>
-        public bool TryCreateSlashCommand(out SlashCommandBuilder slashCommandBuilder, SocketGuild guild, string name, string description)
+        public bool TryCreateSlashCommand(out SlashCommandBuilder? slashCommandBuilder, 
+                                              SocketGuild guild, 
+                                              string name, 
+                                              string description,
+                                              SlashCommandOptionBuilder[]? slashCommandOptionBuilder = null)
         {
             string doc = MethodBase.GetCurrentMethod().Name;
 
@@ -172,33 +221,90 @@ namespace ServerPlatform
 
             slashCommandBuilder = null;
 
-            if (CLIENT == null)
+            if (string.IsNullOrEmpty(name))
             {
-                LOG.Warning(LOG_TYPE, doc, $"디스코드 클라이언트가 null입니다. \"{name}\" slash command는 생성되지 않았습니다.");
+                LOG.Warning(LOG_TYPE, doc, $"slash command 이름이 정상적으로 입력되지 않았습니다. slash command는 생성되지 않았습니다.");
+                return false;
+            }
+            if (string.IsNullOrEmpty(description))
+            {
+                LOG.Warning(LOG_TYPE, doc, $"slash command의 description이 정상적으로 입력되지 않았습니다. \"{name}\" slash command는 생성되지 않았습니다.");
                 return false;
             }
 
-            if (guild == null)
-            {
-                LOG.Warning(LOG_TYPE, doc, $"디스코드에서 해당하는 길드를 찾을 수 없습니다.");
-                return false;
-            }
+            SlashCommandBuilder scb = new SlashCommandBuilder()
+                .WithName(name)
+                .WithDescription(description);
+
+            return TryCreateSlashCommand(out slashCommandBuilder, guild, scb, slashCommandOptionBuilder);
+        }
+
+        /// <summary>
+        /// SlashCommandBuilder를 생성한다.
+        /// </summary>
+        /// <param name="name">SlashCommand 이름</param>
+        /// <param name="description">SlashCommand 설명</param>
+        /// <param name="scob">SlashCommand Option</param>
+        /// <returns>생성에 성공했다면 해당 명령 객체를, 그렇지 않다면 null</returns>
+        public SlashCommandBuilder? CreateSlashCommandBuilder(string name, string description, SlashCommandOptionBuilder? scob = null)
+        {
+            string doc = MethodBase.GetCurrentMethod().Name;
 
             if (string.IsNullOrEmpty(name))
             {
-                LOG.Warning(LOG_TYPE, doc, $"slash command 이름이 정상적으로 입력되지 않았습니다.");
-                return false;
+                LOG.Warning(LOG_TYPE, doc, $"SlashCommand Option의 Name 항목은 공백이거나 null 일 수 없습니다.");
+                return null;
+            }
+            if (string.IsNullOrEmpty(description))
+            {
+                LOG.Warning(LOG_TYPE, doc, $"SlashCommand Option의 Description 항목은 공백이거나 null 일 수 없습니다.");
+                return null;
             }
 
-            slashCommandBuilder = new SlashCommandBuilder();
-            slashCommandBuilder.WithName(name);
-            slashCommandBuilder.WithDescription(description);
+            SlashCommandBuilder scb = new SlashCommandBuilder()
+            {
+                Name = name,
+                Description = description
+            };
 
-            guild.CreateApplicationCommandAsync(slashCommandBuilder.Build());
+            if (scob != null)
+                scb.AddOption(scob);
 
-            LOG.Info(LOG_TYPE, doc, $"슬래시 명령 생성 완료. (name: {name}, description: {description})");
+            return scb;
+        }
 
-            return true;
+        /// <summary>
+        /// SlashCommandOptionBuilder를 생성한다.
+        /// </summary>
+        /// <param name="name">옵션 이름</param>
+        /// <param name="description">옵션 설명</param>
+        /// <param name="type">옵션 타입</param>
+        /// <param name="isRequired">필수 여부</param>
+        /// <returns>생성에 성공했다면 해당 옵션 객체를, 그렇지 않다면 null</returns>
+        public SlashCommandOptionBuilder? CreateSlashCommandOptionBuilder(string name, string description, ApplicationCommandOptionType type, bool isRequired = false)
+        {
+            string doc = MethodBase.GetCurrentMethod().Name;
+
+            if (string.IsNullOrEmpty(name))
+            {
+                LOG.Warning(LOG_TYPE, doc, $"SlashCommand Option의 Name 항목은 공백이거나 null 일 수 없습니다.");
+                return null;
+            }
+            if (string.IsNullOrEmpty(description))
+            {
+                LOG.Warning(LOG_TYPE, doc, $"SlashCommand Option의 Description 항목은 공백이거나 null 일 수 없습니다.");
+                return null;
+            }
+
+            SlashCommandOptionBuilder scob = new SlashCommandOptionBuilder()
+            {
+                Name = name,
+                Description = description,
+                Type = type,
+                IsRequired = isRequired
+            };
+
+            return scob;
         }
 
         public void AddSlashCommandExecuted(SlashCommandHandlerDelegate d)

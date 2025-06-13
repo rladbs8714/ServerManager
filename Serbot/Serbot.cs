@@ -1,6 +1,8 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
+using Discord.WebSocket;
 using Generalibrary;
 using Generalibrary.Tcp;
+using Generalibrary.Xml;
 using ServerPlatform.Extension;
 using System.Collections.Concurrent;
 using System.Reflection;
@@ -92,6 +94,11 @@ namespace ServerPlatform.Serbot
         /// </summary>
         private ConcurrentDictionary<ulong, SocketSlashCommand> _slashCommandDictionary = new ConcurrentDictionary<ulong, SocketSlashCommand>();
 
+        /// <summary>
+        /// xml collection
+        /// </summary>
+        private XmlCollection SlashCommandCollection;
+
 
         // ====================================================================
         // CONSTRUCTORS
@@ -148,9 +155,81 @@ namespace ServerPlatform.Serbot
 
             SocketGuild guild = _discordHelper.Client.GetGuild(GUILD_ID);
 
-            // Slash 명령어 생성 (테스트)
-            _discordHelper.TryCreateSlashCommand(out var scb, guild, "테스트", "테스트 프로그램 실행 후 결과값을 표시한다.");
+            // get xml file
+            string filePath = GetIniData("DISCORD", "slash_command_xml_path");
+            if (string.IsNullOrEmpty(filePath))
+            {
+                LOG.Error(LOG_TYPE, doc, $"Slash Command 정보가 있는 파일 이름이 공백이거나 null입니다.", exit: true);
+                return;
+            }
+            if (!File.Exists(filePath))
+            {
+                LOG.Error(LOG_TYPE, doc, $"\"{filePath}\" 경로에 파일이 없습니다. 파일 경로를 다시 확인해주세요.", exit: true);
+                return;
+            }
 
+            string xml = File.ReadAllText(filePath);
+            SlashCommandCollection = new XmlCollection(xml);
+
+            // 최상위 요소가 'root' 일 경우, SlashCommandCollection을 다음 컬렉션으로 재할당
+            if (SlashCommandCollection.TryGetElement("root", out XmlCollection.XmlElement? r) && r != null)
+                SlashCommandCollection = r.Child;
+
+            // set slash command
+            foreach (var sc in SlashCommandCollection.Elements)
+            {
+                XmlCollection.XmlElement command = sc.Value;
+
+                // get name / description
+                if (!command.Child.TryGetElement("Name",        out var name)        || name        == null) continue;
+                if (!command.Child.TryGetElement("Description", out var description) || description == null) continue;
+
+                // create slash command builder
+                SlashCommandBuilder? scb = _discordHelper.CreateSlashCommandBuilder(name.Value, description.Value, null);
+                if (scb == null) 
+                    continue;
+
+                // get option
+                if (command.Child.TryGetElement("Options", out var options) && options != null)
+                {
+                    for (int i = 0; i < options.Child.Count; i++)
+                    {
+                        XmlCollection.XmlElement? option = options.Child[i];
+
+                        if (option == null)
+                            continue;
+
+                        // create slash command option builder
+                        SlashCommandOptionBuilder scob = new SlashCommandOptionBuilder();
+                        if (!option.Child.TryGetElement("Name", out var optionName) || 
+                            optionName == null                                      || 
+                            string.IsNullOrEmpty(optionName.Value)) 
+                            continue;
+                        scob.WithName(optionName.Value);
+                        if (!option.Child.TryGetElement("Description", out var optionDescription) ||
+                            optionDescription == null                                            ||
+                            string.IsNullOrEmpty(optionDescription.Value))
+                            continue;
+                        scob.WithDescription(optionDescription.Value);
+                        if (option.Child.TryGetElement("OptionType", out var optionType) &&
+                            optionType != null                                           &&
+                            !string.IsNullOrEmpty(optionType.Value)                      &&
+                            Enum.TryParse<ApplicationCommandOptionType>(optionType.Value, out var type))
+                            scob.WithType(type);
+                        if (option.Child.TryGetElement("IsRequired", out var isRequired) &&
+                            isRequired != null &&
+                            !string.IsNullOrEmpty(isRequired.Value) &&
+                            bool.TryParse(isRequired.Value, out bool ir))
+                            scob.IsRequired = ir;
+
+                        // add option
+                        scb.AddOption(scob);
+                    }
+                }
+
+                // create slash command
+                _discordHelper.TryCreateSlashCommand(out SlashCommandBuilder? result, guild, scb);
+            }
 
             // set tcp
             _tcpClient = new TcpClient(TCP_HOST_NAME, TCP_PORT);
@@ -175,7 +254,7 @@ namespace ServerPlatform.Serbot
 
             StringBuilder commandOptions = new StringBuilder();
             foreach (var option in slashCommand.Data.Options)
-                commandOptions.Append(option.Value);
+                commandOptions.Append(option.Type);
 
             ulong  id      = slashCommand.Data.Id;
             string command = slashCommand.Data.Name;
@@ -183,7 +262,7 @@ namespace ServerPlatform.Serbot
 
             LOG.Info(LOG_TYPE, doc, $"slash command 인수. ({command} {options})");
 
-            JsonMessageForDiscord message = new JsonMessageForDiscord(command, command, id, options, OPT_SP);
+            JsonMessageForDiscord message = new JsonMessageForDiscord(command, command, JsonMessage.EMessageType.Discord, id, options, OPT_SP);
             string json = message.ToJson();
 
             await _tcpClient.SendAsync(json);
