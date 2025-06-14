@@ -1,7 +1,6 @@
 ﻿using Generalibrary;
 using Generalibrary.Tcp;
 using ServerPlatform.Extension;
-using System.Data.Common;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
@@ -33,16 +32,25 @@ namespace ServerPlatform
         // CONSTANTS
         // ====================================================================
 
-        private const string LOG_TYPE = "SerbotManager";
-
-        private const string SECTION  = "SERVERPLATFORM:SERBOT";
-
-        private readonly string TCP_HOST_NAME;
-
-        private readonly int TCP_PORT;
-
-        private readonly string PREV_ID = "<|ID|>";
-
+        /// <summary>
+        /// 로그 타입
+        /// </summary>
+        private const    string      LOG_TYPE = "SerbotManager";
+        /// <summary>
+        /// INI 섹션
+        /// </summary>
+        private const    string      SECTION  = "SERVERPLATFORM:SERBOT";
+        /// <summary>
+        /// TCP HOST name
+        /// </summary>
+        private readonly string      TCP_HOST_NAME;
+        /// <summary>
+        /// TCP port
+        /// </summary>
+        private readonly int         TCP_PORT;
+        /// <summary>
+        /// 로그
+        /// </summary>
         private readonly ILogManager LOG = LogManager.Instance;
 
 
@@ -50,6 +58,9 @@ namespace ServerPlatform
         // FIELDS
         // ====================================================================
 
+        /// <summary>
+        /// TCP 서버
+        /// </summary>
         private TcpServer _tcpServer;
 
 

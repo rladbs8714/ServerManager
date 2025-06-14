@@ -105,7 +105,7 @@ namespace ServerPlatform
                 return false;
             }
 
-            // start AgentManager
+            //// start AgentManager
             _isAgentManagerRunning = new AgentManager(INI_PATH).Start();
             if (!_isAgentManagerRunning)
             {

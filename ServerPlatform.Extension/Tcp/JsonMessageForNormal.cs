@@ -18,7 +18,9 @@ namespace ServerPlatform.Extension
         // CONSTRUCTORS
         // ====================================================================
 
-        public JsonMessageForNormal(string name, string message, Guid guid) : base(name, message)
+        public JsonMessageForNormal() { }
+
+        public JsonMessageForNormal(string name, string message, EMessageType type, Guid guid) : base(name, message, type)
         {
             Guid = guid;
         }
@@ -35,7 +37,15 @@ namespace ServerPlatform.Extension
 
         public static bool TryParse(string json, out JsonMessageForNormal? r)
         {
-            r = JsonSerializer.Deserialize<JsonMessageForNormal>(json);
+            try
+            {
+                r = JsonSerializer.Deserialize<JsonMessageForNormal>(json);
+            }
+            catch
+            {
+                r = null;
+            }
+            
 
             return r != null;
         }

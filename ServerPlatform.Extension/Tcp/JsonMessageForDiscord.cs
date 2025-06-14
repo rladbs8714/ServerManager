@@ -18,23 +18,25 @@ namespace ServerPlatform.Extension
         /// 옵션
         /// </summary>
         [JsonPropertyName("options")]
-        public string Options { get; set; }
+        public string? Options { get; set; }
         /// <summary>
         /// 옵션 구분자
         /// </summary>
         [JsonPropertyName("opt_sp")]
-        public string OptionSeparator { get; set; }
+        public string? OptionSeparator { get; set; }
 
 
         // ====================================================================
         // CONSTRUCTORS
         // ====================================================================
 
-        public JsonMessageForDiscord(string name, string message, ulong id, string option, string optSp) : base(name, message)
+        public JsonMessageForDiscord() { }
+
+        public JsonMessageForDiscord(string name, string message, EMessageType type, ulong id, string options, string opt_sp) : base(name, message, type)
         {
             ID = id;
-            Options = option;
-            OptionSeparator = optSp;
+            Options = options;
+            OptionSeparator = opt_sp;
         }
 
 
@@ -49,7 +51,14 @@ namespace ServerPlatform.Extension
 
         public static bool TryParse(string json, out JsonMessageForDiscord? r)
         {
-            r = JsonSerializer.Deserialize<JsonMessageForDiscord>(json);
+            try
+            {
+                r = JsonSerializer.Deserialize<JsonMessageForDiscord>(json);
+            }
+            catch
+            {
+                r = null;
+            }
 
             return r != null;
         }

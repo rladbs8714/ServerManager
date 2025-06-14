@@ -36,7 +36,7 @@ namespace Generalibrary.Tcp
         public void Start()
         {
             string doc = MethodBase.GetCurrentMethod().Name;
-
+            
             LOG.Info(LOG_TYPE, doc, "start tcp client");
         }
     }

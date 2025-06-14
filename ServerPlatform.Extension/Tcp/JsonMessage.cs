@@ -5,25 +5,44 @@ namespace ServerPlatform.Extension
 {
     public class JsonMessage
     {
+
+        // ====================================================================
+        // ENUMS
+        // ====================================================================
+
+        public enum EMessageType
+        {
+            None,
+            Normal,
+            Discord
+        }
+
+
         // ====================================================================
         // CONSTRUCTORS
         // ====================================================================
 
-        [JsonPropertyName("Name")]
-        public string Name { get; set; }
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
 
         [JsonPropertyName("message")]
-        public string Message { get; set; }
+        public string? Message { get; set; }
+
+        [JsonPropertyName("type")]
+        public EMessageType Type { get; set; }
 
 
         // ====================================================================
         // CONSTRUCTORS
         // ====================================================================
 
-        public JsonMessage(string name, string message)
+        public JsonMessage() { }
+
+        public JsonMessage(string name, string message, EMessageType type)
         {
             Name = name;
             Message = message;
+            Type = type;
         }
 
 
@@ -38,7 +57,15 @@ namespace ServerPlatform.Extension
 
         public static bool TryParse(string json, out JsonMessage? r)
         {
-            r = JsonSerializer.Deserialize<JsonMessage>(json);
+            try
+            {
+                r = JsonSerializer.Deserialize<JsonMessage>(json);
+            }
+            catch
+            {
+                r = null;
+            }
+            
 
             return r != null;
         }

@@ -7,6 +7,7 @@ using ServerPlatform.Extension;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 
 namespace ServerPlatform.Serbot
 {
@@ -207,7 +208,7 @@ namespace ServerPlatform.Serbot
                             continue;
                         scob.WithName(optionName.Value);
                         if (!option.Child.TryGetElement("Description", out var optionDescription) ||
-                            optionDescription == null                                            ||
+                            optionDescription == null                                             ||
                             string.IsNullOrEmpty(optionDescription.Value))
                             continue;
                         scob.WithDescription(optionDescription.Value);
@@ -217,8 +218,8 @@ namespace ServerPlatform.Serbot
                             Enum.TryParse<ApplicationCommandOptionType>(optionType.Value, out var type))
                             scob.WithType(type);
                         if (option.Child.TryGetElement("IsRequired", out var isRequired) &&
-                            isRequired != null &&
-                            !string.IsNullOrEmpty(isRequired.Value) &&
+                            isRequired != null                                           &&
+                            !string.IsNullOrEmpty(isRequired.Value)                      &&
                             bool.TryParse(isRequired.Value, out bool ir))
                             scob.IsRequired = ir;
 
@@ -265,11 +266,11 @@ namespace ServerPlatform.Serbot
             JsonMessageForDiscord message = new JsonMessageForDiscord(command, command, JsonMessage.EMessageType.Discord, id, options, OPT_SP);
             string json = message.ToJson();
 
+            _slashCommandDictionary.TryAdd(id, slashCommand);
+
             await _tcpClient.SendAsync(json);
 
             LOG.Info(LOG_TYPE, doc, $"server로 명령 전달\n{command} {options} {PREV_ID}{id}");
-
-            _ = _slashCommandDictionary.TryAdd(id, slashCommand);
         }
 
         /// <summary>
@@ -284,47 +285,54 @@ namespace ServerPlatform.Serbot
 
             LOG.Info(LOG_TYPE, doc, $"디스코드 송신 시작");
 
-            if (e.Message.IndexOf(PREV_ID) < 0)
+            string json = e.Message;
+            JsonMessageForDiscord? msg;
+            try
             {
-                LOG.Error(LOG_TYPE, doc, "서버로부터 응답받은 데이터에 명령 id가 존재하지 않습니다.");
-                success = false;
+                msg = JsonSerializer.Deserialize<JsonMessageForDiscord>(json);
+            }
+            catch
+            {
+                LOG.Error(LOG_TYPE, doc, $"서버로부터 응답받은 데이터가 올바르지 않습니다.");
                 return;
             }
 
-            string idRaw = e.Message.Substring(e.Message.IndexOf(PREV_ID) + PREV_ID.Length);
-            if (!ulong.TryParse(idRaw, out ulong id))
+            if (msg == null)
             {
-                LOG.Error(LOG_TYPE, doc, $"서버로부터 응답받은 데이터의 id가 정상적이지 않습니다.\nid: {idRaw}");
-                success = false;
+                LOG.Error(LOG_TYPE, doc, $"서버로부터 응답받은 데이터가 올바르지 않습니다.");
                 return;
             }
 
-            if (!_slashCommandDictionary.ContainsKey(id))
+            if (!_slashCommandDictionary.TryGetValue(msg.ID, out var r))
             {
-                LOG.Error(LOG_TYPE, doc, $"서버로부터 응답받은 데이터의 id로 요청한 명령을 찾을 수 없습니다.\nid: {id}");
+                LOG.Error(LOG_TYPE, doc, $"서버로부터 응답받은 데이터의 id로 요청한 명령을 찾을 수 없습니다.\nid: {msg.ID}");
                 success = false;
                 return;
             }
+            if (string.IsNullOrEmpty(msg.Message))
+            {
+                LOG.Error(LOG_TYPE, doc, $"서버로부터 응답받은 데이터의 메시지가 공백 혹은 null입니다.");
+                return;
+            }
 
-            string message = e.Message.Substring(0, e.Message.IndexOf(PREV_ID));
-            _slashCommandDictionary.TryRemove(id, out SocketSlashCommand? sc);
+            _slashCommandDictionary.TryRemove(msg.ID, out SocketSlashCommand? sc);
 
             if (sc == null)
             {
-                LOG.Error(LOG_TYPE, doc, $"\"{id}\"의 SocketSlashCommand가 null입니다.");
+                LOG.Error(LOG_TYPE, doc, $"\"{msg.ID}\"의 SocketSlashCommand가 null입니다.");
                 success = false;
                 return;
             }
 
             if (!success)
             {
-                LOG.Error(LOG_TYPE, doc, $"\"{id}\"의 명령이 정상적으로 수행되지 않았습니다.");
+                LOG.Error(LOG_TYPE, doc, $"\"{msg.ID}\"의 명령이 정상적으로 수행되지 않았습니다.");
                 return;
             }
 
-            await sc.RespondAsync(message);
+            await sc.RespondAsync(msg.Message);
 
-            LOG.Info(LOG_TYPE, doc, $"\"{id}\"의 명령이 정상적으로 수행되었습니다.");
+            LOG.Info(LOG_TYPE, doc, $"\"{msg.Name}:{msg.ID}\"의 명령이 정상적으로 수행되었습니다.");
         }
     }
 }

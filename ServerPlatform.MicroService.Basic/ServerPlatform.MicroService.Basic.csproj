@@ -7,4 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ServerPlatform.Extension\ServerPlatform.Extension.csproj" />
+  </ItemGroup>
+
 </Project>
