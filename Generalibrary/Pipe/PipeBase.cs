@@ -37,7 +37,7 @@ namespace Generalibrary
         /// <summary>
         /// log
         /// </summary>
-        protected readonly ILogManager LOG = LogManager.Instance;
+        protected readonly ILog LOG = LogManager.Instance;
 
 
         // ====================================================================

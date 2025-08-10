@@ -18,10 +18,13 @@ namespace Generalibrary
      *  < History >
      *  2024.06.19 @yoon
      *  - 최초 작성
+     *  2025.06.15 @yoon
+     *  - 로그 레벨 추가
+     *  - 리펙토링
      *  ===========================================================================
      */
 
-    public class LogManager : IniHelper, ILogManager
+    public class LogManager : IniHelper, ILog
     {
 
         #region SINGLETON
@@ -41,6 +44,17 @@ namespace Generalibrary
         }
         #endregion
 
+        // ====================================================================
+        // ENUMS
+        // ====================================================================
+
+        private enum ELogType
+        {
+            Info,
+            Warning,
+            Error
+        }
+
 
         // ====================================================================
         // CONSTANTS
@@ -54,11 +68,10 @@ namespace Generalibrary
         /// log type
         /// </summary>
         private const string LOG_TYPE = "LogManager";
-
         /// <summary>
         /// 로그 콘솔 출력 여부
         /// </summary>
-        private readonly bool IS_DEBUG = false;
+        private readonly bool IS_CONSOLE_OUTPUT = false;
         /// <summary>
         /// 로그 파일 이름 포멧
         /// </summary>
@@ -105,28 +118,33 @@ namespace Generalibrary
 
             LOCATION_NAME = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location);
             
-            string generalSection = "GENERAL";
+            // define section
+            string generalSection  = "GENERAL";
+            // define key
+            string consoleKey    = "console";
+            string nameFormatKey = "name_format";
+            string pathKey       = "path";
+
             // 디버그 옵션 설정
-            bool.TryParse(GetIniData(generalSection, "console"), out IS_DEBUG);
+            if (!TryGetIniData<bool>(generalSection, consoleKey, out IS_CONSOLE_OUTPUT))
+                throw new IniDataNotFoundException($"[{generalSection}] 섹션의 [{consoleKey}] 값을 찾을 수 없습니다. {INI_PATH}파일을 확인해주세요");
 
             // 로그 이름 포멧 설정
-            string nameFormat = GetIniData(generalSection, nameof(nameFormat));
-            if (string.IsNullOrEmpty(nameFormat))
-                throw new IniDataException($"[{generalSection}]섹션의 [{nameof(nameFormat)}]값을 찾을 수 없거나 공백입니다.");
+            if (!TryGetIniData<string>(generalSection, nameFormatKey, out string? nameFormat) || string.IsNullOrEmpty(nameFormat))
+                throw new IniDataNotFoundException($"[{generalSection}]섹션의 [{nameFormatKey}]값을 찾을 수 없거나 공백입니다.");
 
             FILE_NAME_FORMAT = nameFormat;
 
             // 파일저장 경로 설정
-            string path = GetIniData(generalSection, nameof(path));
-            if (string.IsNullOrEmpty(path))
-                throw new IniDataException($"[{generalSection}]섹션의 [{nameof(path)}]값을 찾을 수 없거나 공백입니다.");
+            if (!TryGetIniData<string>(generalSection, pathKey, out string? path) || string.IsNullOrEmpty(path))
+                throw new IniDataNotFoundException($"[{generalSection}]섹션의 [{nameof(path)}]값을 찾을 수 없거나 공백입니다.");
 
             FILE_PATH = Uri.TryCreate(path, UriKind.Absolute, out _) ? 
                         path : 
                         Path.Combine(Environment.CurrentDirectory, path);
 
             SetFileName();
-            Check();
+            CheckNewDay();
 
             // 파일에 로그 작성
             // 프로그램 실행중 단 한번만 실행되야 하기 때문에 생성자에서 람다로 호출한다.
@@ -213,21 +231,21 @@ namespace Generalibrary
                          [DoesNotReturnIf(true)] bool exit = false, 
                          ELogType logType = ELogType.Info)
         {
-            Check();
+            CheckNewDay();
 
-            string time     = DateTime.Now.ToString("HH:mm:ss.fffff");
-            string exMsg    = exception != null ? $"\n{exception?.Message}" : string.Empty;
-            string log      = $"{time} {type.PadRight(20)}{doc.PadRight(25)}{message}{exMsg}";
+            string time  = DateTime.Now.ToString("HH:mm:ss.fffff");
+            string exMsg = exception != null ? $"\n{exception.Message}" : string.Empty;
+            string log   = $"{time} {type.PadRight(20)}{doc.PadRight(25)}{message}{exMsg}";
 
             // Console
-            if (IS_DEBUG)
+            if (IS_CONSOLE_OUTPUT)
             {
                 Console.ForegroundColor = logType switch
                 {
-                    ELogType.Info => ConsoleColor.Green,
+                    ELogType.Info    => ConsoleColor.Green,
                     ELogType.Warning => ConsoleColor.Yellow,
-                    ELogType.Error => ConsoleColor.Red,
-                    _ => ConsoleColor.White
+                    ELogType.Error   => ConsoleColor.Red,
+                    _                => ConsoleColor.White
                 };
                 Console.WriteLine(log);
                 Console.ForegroundColor = ConsoleColor.White;
@@ -258,7 +276,7 @@ namespace Generalibrary
         /// 새로운 날짜를 확인,
         /// 로그파일이 존재하는지 확인, 없다면 생성한다.
         /// </summary>
-        private void Check()
+        private void CheckNewDay()
         {
             string doc = MethodBase.GetCurrentMethod().Name;
 

@@ -31,7 +31,7 @@ namespace Generalibrary.Tcp
         // CONSTANTS
         // ====================================================================
 
-        private readonly ILogManager LOG = LogManager.Instance;
+        private readonly ILog LOG = LogManager.Instance;
 
         private readonly string LOG_TYPE = "TcpBase";
 

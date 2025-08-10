@@ -41,7 +41,7 @@ namespace ServerPlatform
         /// <summary>
         /// 로그 매니저
         /// </summary>
-        private readonly ILogManager LOG = LogManager.Instance;
+        private readonly ILog LOG = LogManager.Instance;
 
         /// <summary>
         /// 디스코드 클라이언트

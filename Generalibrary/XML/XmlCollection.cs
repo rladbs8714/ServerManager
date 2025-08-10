@@ -1,6 +1,5 @@
 ﻿using Generalibrary.XML;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Generalibrary.Xml
@@ -35,7 +34,7 @@ namespace Generalibrary.Xml
         /// <summary>
         /// 로그
         /// </summary>
-        private readonly ILogManager LOG      = LogManager.Instance;
+        private readonly ILog LOG      = LogManager.Instance;
 
 
         // ====================================================================

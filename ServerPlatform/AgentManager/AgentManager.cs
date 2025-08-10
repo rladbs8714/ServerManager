@@ -38,7 +38,7 @@ namespace ServerPlatform
 
         private const string SECTION = "SERVERPLATFORM:AGENT";
 
-        private readonly ILogManager LOG = LogManager.Instance;
+        private readonly ILog LOG = LogManager.Instance;
         #endregion
 
         private readonly int    AGENT_COUNT;

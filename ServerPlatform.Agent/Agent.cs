@@ -39,7 +39,7 @@ namespace ServerPlatform.Agent
         /// <summary>
         /// 로그 매니저
         /// </summary>
-        private readonly ILogManager LOG = LogManager.Instance;
+        private readonly ILog LOG = LogManager.Instance;
 
         /// <summary>
         /// tcp server host name
@@ -223,12 +223,15 @@ namespace ServerPlatform.Agent
             Process? process = null;
             string? json = string.Empty;
 
-            Console.WriteLine(msg.ToJson());
+            
+            string raw = msg.ToJson();
+            raw = raw.Replace("\"", "\\\"");
+
             try
             {
                 process = new Process();
                 process.StartInfo.FileName = filePath;
-                process.StartInfo.Arguments = msg.ToJson();
+                process.StartInfo.Arguments = raw;
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
 
@@ -299,6 +302,7 @@ namespace ServerPlatform.Agent
                 return false;
             }
 
+            LOG.Warning(LOG_TYPE, doc, json);
             result = JsonSerializer.Deserialize<T>(json);
 
             return true;

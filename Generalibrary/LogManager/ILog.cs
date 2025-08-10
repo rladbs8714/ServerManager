@@ -2,7 +2,7 @@
 
 namespace Generalibrary
 {
-    public interface ILogManager
+    public interface ILog
     {
         void Info(string type, string doc, string message, string[]? options = null);
 

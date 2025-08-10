@@ -30,7 +30,7 @@ namespace ServerPlatform.Serbot
             string doc = MethodBase.GetCurrentMethod().Name;
 
             SystemInfo.Info.Initializer(new StartOption(args));
-            ILogManager LOG = LogManager.Instance;
+            ILog LOG = LogManager.Instance;
 
             // start serbot
             try

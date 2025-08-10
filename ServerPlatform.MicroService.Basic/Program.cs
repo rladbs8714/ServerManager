@@ -1,4 +1,5 @@
 ﻿using ServerPlatform.Extension;
+using System.Text;
 using System.Text.Json;
 
 namespace ServerPlatform.MicroService
@@ -41,13 +42,6 @@ namespace ServerPlatform.MicroService
         static void Main(string[] args)
         {
             string? outputJson = string.Empty;
-
-#if DEBUG
-            args = new string[1]
-            {
-                "{\"id\":1375316822714355794,\"options\":\"String\",\"opt_sp\":\"\\u003C|OS|\\u003E\",\"name\":\"\\uD14C\\uC2A4\\uD2B8\",\"message\":\"\\uD14C\\uC2A4\\uD2B8\",\"type\":2}"
-            };
-#endif
 
             if (args == null || args.Length <= 0)
             {
@@ -123,11 +117,20 @@ namespace ServerPlatform.MicroService
                 return;
             }
 
-            if (msg.Name == "테스트")
-                outputJson = StartTestForDiscord((JsonMessageForDiscord)msg);
-            else
-                outputJson = new JsonMessage("error", "알 수 없는 이유로 명령을 정상적으로 처리하지 못했습니다.", JsonMessage.EMessageType.None)
+            switch (msg.Name)
+            {
+                case "테스트":
+                    outputJson = StartTestForDiscord((JsonMessageForDiscord)msg);
+                    break;
+                case "랜덤_팀":
+                    outputJson = StartRandomTeamForDiscord((JsonMessageForDiscord)msg);
+                    break;
+
+                default:
+                    outputJson = new JsonMessage("error", "알 수 없는 이유로 명령을 정상적으로 처리하지 못했습니다.", JsonMessage.EMessageType.None)
                     .ToJson();
+                    break;
+            }
 
             Console.Write(outputJson);
         }
@@ -140,9 +143,73 @@ namespace ServerPlatform.MicroService
         public static string StartTestForDiscord(JsonMessageForDiscord msg)
         {
             string newMsg = $"테스트 명령에 대한 출력입니다.\n" +
-                         $"명령 이름  : {msg.Name}\n" +
-                         $"명령 메시지: {msg.Message}\n" +
-                         $"명령 옵션  : {msg.Options}";
+                            $"명령 이름  : {msg.Name}\n" +
+                            $"명령 메시지: {msg.Message}\n" +
+                            $"명령 옵션  : {msg.Options}";
+
+            return new JsonMessageForDiscord(msg.Name, newMsg, JsonMessage.EMessageType.Discord, msg.ID, string.Empty, string.Empty)
+                .ToJson();
+        }
+
+        /// <summary>
+        /// 랜덤팀을 생성해 반환한다.
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        public static string StartRandomTeamForDiscord(JsonMessageForDiscord msg)
+        {
+            string newMsg = string.Empty;
+            if (!string.IsNullOrEmpty(msg.Options))
+            {
+                string[] options = msg.Options.Split(msg.OptionSeparator);
+
+                bool isError = false;
+                if (options.Length != 2)
+                {
+                    isError = true;
+                    newMsg = "옵션이 2개 미만 혹은 초과 입니다.";
+                }
+                if (string.IsNullOrEmpty(options[0]) || string.IsNullOrEmpty(options[1]))
+                {
+                    isError = true;
+                    newMsg = "[0]혹은 [1]의 옵션이 공백 혹은 null 입니다.";
+                }
+                if (!int.TryParse(options[0], out int splitCount))
+                {
+                    isError = true;
+                    newMsg = "[0]의 옵션이 숫자가 아닙니다.";
+                }
+                
+                if (!isError)
+                {
+                    // randome team process
+                    Random rand = new Random();
+                    string[] peoples = options[1].Split(',')
+                                                 .OrderBy(_ => rand.Next()).ToArray();
+                    List<string>[] split = new List<string>[splitCount];
+                    for (int i = 0; i < split.Length; i++)
+                        split[i] = new List<string>();
+
+                    int currSplitIdx = 0;
+                    for (int i = 0; i < peoples.Length; i++)
+                    {
+                        split[currSplitIdx].Add(peoples[i]);
+
+                        if (++currSplitIdx >= split.Length)
+                            currSplitIdx = 0;
+                    }
+
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < split.Length; i++)
+                    {
+                        string line = $"팀 {i + 1}: {string.Join(", ", split[i])}";
+                        sb.Append(line + "\r\n");
+                    }
+                    --sb.Length;
+
+                    newMsg = sb.ToString();
+                }
+            }
 
             return new JsonMessageForDiscord(msg.Name, newMsg, JsonMessage.EMessageType.Discord, msg.ID, string.Empty, string.Empty)
                 .ToJson();

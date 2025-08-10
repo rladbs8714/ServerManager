@@ -29,7 +29,7 @@ namespace ServerPlatform.Agent
             string doc = MethodBase.GetCurrentMethod().Name;
 
             SystemInfo.Info.Initializer(new StartOption(args));
-            ILogManager LOG = LogManager.Instance;
+            ILog LOG = LogManager.Instance;
 
             string numberRaw = SystemInfo.Info.StartOption["--process-index"];
             if (string.IsNullOrEmpty(numberRaw))

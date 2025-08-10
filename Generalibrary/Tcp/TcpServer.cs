@@ -11,7 +11,7 @@ namespace Generalibrary.Tcp
 
         private const string LOG_TYPE = "TcpServer";
 
-        private readonly ILogManager LOG = LogManager.Instance;
+        private readonly ILog LOG = LogManager.Instance;
 
 
         // ====================================================================

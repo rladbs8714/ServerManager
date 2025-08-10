@@ -44,7 +44,7 @@ namespace ServerPlatform
 
         private readonly int AGENT_COUNT;
 
-        private readonly ILogManager LOG = LogManager.Instance;
+        private readonly ILog LOG = LogManager.Instance;
 
 
         // ====================================================================

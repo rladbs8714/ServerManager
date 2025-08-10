@@ -27,7 +27,7 @@ namespace ServerPlatform
 
         private const string LOG_TYPE = "OrchestratorManager";
 
-        private readonly ILogManager LOG = LogManager.Instance;
+        private readonly ILog LOG = LogManager.Instance;
 
         private const string SECTION = "SERVERPLATFORM:Orchestrator";
 

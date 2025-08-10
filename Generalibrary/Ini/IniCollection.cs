@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-
-namespace Generalibrary
+﻿namespace Generalibrary
 {
 
     /*
@@ -22,27 +20,13 @@ namespace Generalibrary
     public class IniCollection
     {
         // ====================================================================
-        // CONSTANTS
-        // ====================================================================
-
-        /// <summary>
-        /// log type
-        /// </summary>
-        private string LOG_TYPE = "IniCollection";
-        /// <summary>
-        /// log
-        /// </summary>
-        // private readonly ILogManager LOG = LogManager.Instance;
-
-
-        // ====================================================================
         // FIELDS
         // ====================================================================
 
         /// <summary>
         /// ini option dictionary
         /// </summary>
-        private Dictionary<string, Dictionary<string, string>> _options;
+        private readonly Dictionary<string, Dictionary<string, string>> Collection;
 
         /// <summary>
         /// 섹션에 해당하는 딕셔너리를 반환한다.
@@ -50,14 +34,8 @@ namespace Generalibrary
         /// <param name="section">섹션</param>
         /// <returns><paramref name="section"/>이 있다면 해당하는 섹션의 딕셔너리, 그렇지 않으면 null</returns>
         public Dictionary<string, string>? this[string section]
-        {
-            get
-            {
-                if (!_options.ContainsKey(section))
-                    return null;
-                return _options[section];
-            }
-        }
+            => Collection.TryGetValue(section, out var value) ?
+                    value : null;
 
 
         // ====================================================================
@@ -65,9 +43,7 @@ namespace Generalibrary
         // ====================================================================
 
         public IniCollection()
-        {
-            _options = new Dictionary<string, Dictionary<string, string>>();
-        }
+            => Collection = new Dictionary<string, Dictionary<string, string>>();
 
 
         // ====================================================================
@@ -82,23 +58,20 @@ namespace Generalibrary
         /// <param name="value">value</param>
         public void Add(string section, string key, string value)
         {
-            string doc = MethodBase.GetCurrentMethod().Name;
-
-            const string addErrMsg = "항목을 정상적으로 추가할 수 없습니다.";
-
+            // section / key / value 중 하나라도 공백이라면 해당 데이터 추가는 무시된다.
             if (string.IsNullOrEmpty(section) || string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
-            {
-                string emptyValueName = string.IsNullOrEmpty(section) ? nameof(section) :
-                                        string.IsNullOrEmpty(key    ) ? nameof(key    ) :
-                                                                        nameof(value  );
-                // LOG.Warning(LOG_TYPE, doc, $"{addErrMsg} \'{emptyValueName}\'이(가) 공백 혹은 null 입니다.");
                 return;
-            }
 
-            if (!_options.ContainsKey(section))
-                _options.Add(section, new Dictionary<string, string>());
+            // 'section'에 해당하는 섹션이 없다면 데이터 추가를 위한 Dictionary를 생성한다.
+            if (!Collection.ContainsKey(section))
+                Collection.Add(section, new Dictionary<string, string>());
 
-            _options[section].Add(key, value);
+            // 이미 'section' Dictionary에 'key'가 존재하다면 데이터 추가는 무시된다.
+            if (Collection[section].ContainsKey(key))
+                return;
+
+            // 데이터 추가
+            Collection[section].Add(key, value);
         }
 
         [Obsolete("항목 삭제는 사용되지 않음.")]

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ServerPlatform.MicroService.Basic": {
+      "commandName": "Project",
+      "commandLineArgs": "{\\\"id\\\":1383052419008565382,\\\"options\\\":\\\"2\\u003C|OS|\\u003E\\uAC00 \\uB098 \\uB2E4 \\uB77C \\uB9C8 \\uBC14 \\uC0AC\\\",\\\"opt_sp\\\":\\\"\\u003C|OS|\\u003E\\\",\\\"name\\\":\\\"\\uB79C\\uB364_\\uD300\\\",\\\"message\\\":\\\"\\uB79C\\uB364_\\uD300\\\",\\\"type\\\":2}"
+    }
+  }
+}

@@ -28,7 +28,7 @@ namespace ServerPlatform
 
         private const string LOG_TYPE = "ManagerBase";
 
-        private readonly ILogManager LOG = LogManager.Instance;
+        private readonly ILog LOG = LogManager.Instance;
 
 
         // ====================================================================

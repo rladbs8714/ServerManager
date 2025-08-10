@@ -15,42 +15,26 @@ namespace Generalibrary
      *  - 항목을 Dictionary로 관리하면 좋겠음. 그래서 나중에 .ini파일 저장할 때도 항목 키값을 변수 이름처럼 지으면 관리하기 편할것임.
      *  
      *  < TODO >
-     *  - 파일 읽기
-     *  - 파싱되는 항목 정의
-     *  - 파싱이 무시되는 항목 정의 (주석 등)
+     *  - 2025.06.18 @yoon
+     *    현재로선 라인 끝쪽에 주석을 달면 비정상적으로 동작할 확률이 있음.
+     *    지금 당장은 개발자가 나 하나라 괜찮은데 이 라이브러리를 누군가와 같이 사용하게 될 경우를 생각하자.
      *  
      *  < History >
      *  2024.07.11 @yoon
      *  - 최초 작성
      *  2025.05.18 @yoon
      *  - value값이 '"'(쌍따옴표)로 묶여 있다면 쌍따옴표를 제외 후 값만 추출
+     *  2025.06.16 @yoon
+     *  - 로그 및 예외 처리 수정
+     *  - 리펙토링
      *  ===========================================================================
      */
 
     public class IniParser
     {
         // ====================================================================
-        // CONSTANTS
-        // ====================================================================
-
-        /// <summary>
-        /// log type
-        /// </summary>
-        private string LOG_TYPE = "IniParser";
-        /// <summary>
-        /// log
-        /// </summary>
-        // private readonly ILogManager LOG = LogManager.Instance;
-
-
-        // ====================================================================
         // PROPERTIES
         // ====================================================================
-
-        /// <summary>
-        /// ini 파일에서 읽은 설정 값
-        /// </summary>
-        private IniCollection IniCollection { get; set; }
 
         /// <summary>
         /// 섹션에 해당하는 딕셔너리를 반환한다.
@@ -58,9 +42,18 @@ namespace Generalibrary
         /// <param name="section">섹션</param>
         /// <returns><paramref name="section"/>이 있다면 해당하는 섹션의 딕셔너리, 그렇지 않으면 null</returns>
         public Dictionary<string, string>? this[string section]
-        {
-            get { return IniCollection[section]; }
-        }
+            => IniCollection[section];
+
+
+        // ====================================================================
+        // FIELDS
+        // ====================================================================
+
+        /// <summary>
+        /// ini 파일에서 읽은 설정 값
+        /// </summary>
+        private readonly IniCollection IniCollection;
+
 
         // ====================================================================
         // CONSTRUCTORS
@@ -76,45 +69,21 @@ namespace Generalibrary
         /// <exception cref="FileNotFoundException"></exception>
         public IniParser(string fileName, char separator = '=')
         {
-            string doc = MethodBase.GetCurrentMethod().Name;
-
             // ini 파일 경로 문자열 유효 검사
             if (string.IsNullOrEmpty(fileName))
-            {
-                string errMsg = $"파일 경로가 공백 혹은 Null 입니다.";
-                // LOG.Error(LOG_TYPE, doc, errMsg);
-                throw new ArgumentException(errMsg);
-            }
-
+                throw new ArgumentNullException($"파일 경로가 공백 혹은 Null 입니다. (파일 경로: {fileName})");
+            
             // 파일 경로가 상대 경로라면 절대경로로 바꿔줌
             if (Uri.TryCreate(fileName, UriKind.Relative, out _))
                 fileName = Path.Combine(Environment.CurrentDirectory, fileName);
 
             // 파일 유효성 검사
             if (!File.Exists(fileName))
-            {
-                string errMsg = $"{fileName}경로에 파일이 없습니다. 파일 경로를 다시 확인해주세요.";
-                // LOG.Error(LOG_TYPE, doc, errMsg);
-                throw new FileNotFoundException(errMsg);
-            }
+                throw new FileNotFoundException($"{fileName}경로에 파일이 없습니다. 파일 경로를 다시 확인해주세요.");
 
             // ini 파일 읽기
-            string[] lines;
-            try
-            {
-                lines = File.ReadAllLines(fileName);
-            }
-            catch (IOException ex)
-            {
-                // LOG.Error(LOG_TYPE, doc, ex.Message, exception: ex);
-                throw;
-            }
-
-            // 파일이 비어있다면 warning logging
-            if (lines.Length == 0)
-            {
-                // LOG.Warning(LOG_TYPE, doc, $"{fileName}의 내용이 비어있습니다.");
-            }
+            string[]? lines = null;
+            lines = File.ReadAllLines(fileName);
 
             // parsing
             string section = string.Empty;
@@ -139,39 +108,21 @@ namespace Generalibrary
                 // 라인에서 분할자가 있는지 확인하고 인덱스 저장
                 int separatorIdx = line.IndexOf(separator);
 
-                if (separatorIdx == -1)
-                {
-                    // LOG.Warning(LOG_TYPE, doc, $"{fileName}파일의 {i}번째 줄에는 구분자\'{separator}\'가 없습니다.");
-                    continue;
-                }
-
-                if (separatorIdx == 0)
-                {
-                    // LOG.Warning(LOG_TYPE, doc, $" {fileName}파일의 {i}번째 줄에는 Key값이 없습니다.");
-                    continue;
-                }
-
-                if (separatorIdx + 1 > line.Length)
-                {
-                    // LOG.Warning(LOG_TYPE, doc, $"{fileName}파일의 {i}번째 줄에는 Value값이 없습니다.");
-                    continue;
-                }
+                if (separatorIdx == -1)             continue; // 파싱하려는 라인에 구분자가 존재하지 않는 경우
+                if (separatorIdx == 0)              continue; // 파싱하려는 라인에 키가 존재하지 않는 경우
+                if (separatorIdx + 1 > line.Length) continue; // 파싱하려는 라인에 값이 존재하지 않는 경우
 
                 // key, value 설정
                 string key   = line.Substring(0, separatorIdx) .Trim();
-                string value = line.Substring(separatorIdx + 1).Trim();
+                string value = line.Substring(1 + separatorIdx).Trim();
 
-                if (string.IsNullOrEmpty(section))
-                {
-                    // LOG.Warning(LOG_TYPE, doc, $"{nameof(section)}이 공백이거나 null입니다. {nameof(key)}:{key}와 {nameof(value)}:{value}는 저장되지 않습니다.");
+                // 섹션이 공백이거나 null 일 때
+                if (string.IsNullOrEmpty(section)) 
                     continue;
-                }
 
                 // first or last 문자가 '"'(쌍따옴표)라면 제거
-                if (value[0] == '"')
-                    value = value.Substring(1);
-                if (value[value.Length - 1] == '"')
-                    value = value.Substring(0, value.Length - 1);
+                if (value[0] == '"')                value = value.Substring(1);
+                if (value[value.Length - 1] == '"') value = value.Substring(0, value.Length - 1);
 
                 IniCollection.Add(section, key, value);
             }

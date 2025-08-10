@@ -6,7 +6,6 @@ using Generalibrary.Xml;
 using ServerPlatform.Extension;
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Text;
 using System.Text.Json;
 
 namespace ServerPlatform.Serbot
@@ -73,7 +72,7 @@ namespace ServerPlatform.Serbot
         /// <summary>
         /// 로그 매니저
         /// </summary>
-        private readonly ILogManager LOG = LogManager.Instance;
+        private readonly ILog LOG = LogManager.Instance;
 
         
         // ====================================================================
@@ -253,9 +252,16 @@ namespace ServerPlatform.Serbot
         {
             string doc = MethodBase.GetCurrentMethod().Name;
 
-            StringBuilder commandOptions = new StringBuilder();
+
+            List<string> commandOptions = new List<string>();
             foreach (var option in slashCommand.Data.Options)
-                commandOptions.Append(option.Type);
+            {
+                string? value = option.Value.ToString();
+                if (string.IsNullOrEmpty(value))
+                    continue;
+
+                commandOptions.Add(value);
+            }
 
             ulong  id      = slashCommand.Data.Id;
             string command = slashCommand.Data.Name;

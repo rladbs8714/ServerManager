@@ -24,7 +24,7 @@
       <Players>
         <Name>플레이어</Name>
         <OptionType>String</OptionType>
-        <Description>참여하는_플레이어를_공백(Space)로_구분하여_입력한다.</Description>
+        <Description>참여하는_플레이어를_쉼표(Comma)로_구분하여_입력한다.</Description>
         <IsRequired>True</IsRequired>
       </Players>
     </Options>

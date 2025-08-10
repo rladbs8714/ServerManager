@@ -51,7 +51,7 @@ namespace ServerPlatform
         /// <summary>
         /// 로그
         /// </summary>
-        private readonly ILogManager LOG = LogManager.Instance;
+        private readonly ILog LOG = LogManager.Instance;
 
 
         // ====================================================================
